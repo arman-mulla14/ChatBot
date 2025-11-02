@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wellness Bot</title>
+
+    <!-- CSS (Keeping existing links) -->
+    <!-- In a real single-file app, all CSS should be inline or loaded via a single external Tailwind CDN -->
+    <link rel="stylesheet" href="./asset/style/contact.css" />
+    <link rel="stylesheet" href="./Footer.css" />
+    <link rel="stylesheet" href="./Header.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./asset/chat.css" />
+    <script src="Header.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </head>
+
+  <body>
+    <div id="header-0"></div>
+
+    <div class="site-wrapper">
+      <div class="main-container">
+        <!-- Chat Panel -->
+        <div class="form-panel login-panel">
+          <form onsubmit="event.preventDefault(); sendMessage();">
+            <h1>Wellness Chatbot</h1>
+            <span>A safe space to talk and find support.</span>
+
+            <div class="chatbot-box">
+              <div class="chatbot-header">💖 Mental Health Support</div>
+              <div class="chatbot-body" id="chatBody"></div>
+              <div class="chatbot-input">
+                <input
+                  type="text"
+                  id="userInput"
+                  placeholder="Type your message..."
+                />
+                <button type="button" class="send-btn" onclick="sendMessage()">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Contact Form Panel -->
+        <div class="form-panel register-panel">
+          <form>
+            <h1>Contact Our Team</h1>
+            <span>Send your message and we'll get back to you shortly.</span>
+
+            <div class="input-group">
+              <i class="fas fa-user"></i>
+              <input type="text" placeholder="Name" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-envelope"></i>
+              <input type="email" placeholder="Email" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-phone"></i>
+              <input type="tel" placeholder="Phone Number" />
+            </div>
+
+            <div class="input-group textarea-group">
+              <i class="fas fa-comment-dots"></i>
+              <textarea placeholder="Message..." required></textarea>
+            </div>
+
+            <button type="submit" class="Contact1">Contact</button>
+          </form>
+        </div>
+
+        <!-- Overlay Panel -->
+        <div class="overlay-sections-container">
+          <div class="overlay-background">
+            <div class="overlay-content overlay-left-side">
+              <h1>Talk to Our Bot</h1>
+              <p>Get instant answers and support from our smart chatbot.</p>
+              <button class="transparent-btn" onclick="togglePanel(false)">
+                Chat
+              </button>
+            </div>
+            <div class="overlay-content overlay-right-side">
+              <h1>Need Professional Help?</h1>
+              <p>Contact our team for further assistance.</p>
+              <button class="transparent-btn" onclick="togglePanel(true)">
+                Contact
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function togglePanel(showContact) {
+        const container = document.querySelector(".main-container");
+        if (showContact) {
+          container.classList.add("right-panel-active-toggle");
+        } else {
+          container.classList.remove("right-panel-active-toggle");
+        }
+      }
+
+      let isDevMode = false;
+      let waitingForAnswer = false;
+      let tempQuestion = "";
+
+      // 🚨 Triage Step Counter (0: not started, 1: asking name, 2: asking feeling, 3: completed)
+      let triageStep = 0;
+      let triageData = { name: null, feeling: null };
+
+      // --- EXPANDED TRAINING DATA (Focused for high-value exact matches) ---
+      let trainingData = {
+        // --- General Support and Greetings (Original) ---
+        hi: "Hello there! I'm here to support you. How are you feeling right now?",
+        hello: "Hello! Thank you for reaching out. What's on your mind today?",
+        "how are you": "I'm a bot here to help you. How are *you* doing?",
+        "thank you":
+          "You're welcome. Remember, taking time for your mental health is important.",
+        "i am fine":
+          "That's good to hear. Feel free to ask me anything about coping, mindfulness, or finding professional help.",
+        "i need help":
+          "I'm here to offer support and techniques. Can you tell me if you are struggling with anxiety, low mood, or relationships?",
+        "i feel overwhelmed today":
+          "It's normal to feel that way. Let's start with a quick win: take three deep, slow breaths right now.",
+        "what should i do":
+          "Let's focus on the present moment. What is the single most pressing feeling you are experiencing?",
+        "i don't know where to start":
+          "Take the pressure off. Focus on just one small, manageable task—maybe drinking a glass of water.",
+
+        // --- Exact Match Techniques (Original) ---
+        "what is grounding":
+          "Grounding is a technique to pull your attention away from intense emotions and back to the present moment. Try focusing on the color blue in the room.",
+        "box breathing":
+          "Let's do **Box Breathing**. Inhale for a count of four, hold for a count of four, exhale for a count of four, and hold the breath out for a count of four. Repeat four times.",
+        "what is self-care":
+          "Self-care isn't selfish; it's necessary. It involves actions that support your physical, mental, and emotional health. What is one small act of kindness you can show yourself today?",
+        "how to set boundaries":
+          "Setting boundaries is an act of **self-respect**. Start small by practicing saying, 'I appreciate you asking, but I can't commit to that right now.'",
+        "what is progressive muscle relaxation":
+          "It's a technique where you tense a muscle group as much as you can, hold for 10 seconds, then completely release. It helps you recognize and release tension.",
+        "5-4-3-2-1 technique":
+          "Let's use the **5-4-3-2-1 technique** for grounding. Name 5 things you see, 4 things you feel, 3 things you hear, 2 things you smell, and 1 thing you taste.",
+
+        // --- Crisis (Crucial Exact Match - Original) ---
+        "i feel suicidal":
+          "🛑 **CRISIS ALERT: If you are in immediate danger, please call your local emergency services (e.g., 911 or 988) right now.** I am a bot and cannot provide emergency help. Please reach out to a professional crisis line. You matter, and help is available.",
+        "i need help right now":
+          "If this is an emergency, contact your local crisis hotline. If not, let's take one minute to do a simple breathing exercise together. Inhale for 3, exhale for 5.",
+        "emergency contact":
+          "Please call your local emergency services (like 911) or a dedicated crisis hotline (like 988 in the US) immediately.",
+        "where to get help":
+          "For immediate safety, call a crisis line. For longer-term help, look for licensed therapists or counselors in your area.",
+
+        // --- Professional Resources (Original) ---
+        "find a therapist":
+          "You can search for licensed therapists using online directories like Psychology Today, or check with your insurance provider for in-network care.",
+        "what is therapy like":
+          "Therapy is a safe, confidential space where you work with a professional to understand your thoughts, feelings, and behaviors. It's a journey of self-discovery and growth.",
+        "is medication helpful":
+          "Medication, when managed by a psychiatrist, can be a valuable tool alongside therapy to help stabilize mood or reduce severe anxiety.",
+        "what is psychiatry":
+          "Psychiatry is the medical specialty devoted to the diagnosis, prevention, and treatment of mental disorders. A psychiatrist can prescribe medication.",
+        "what is a psychologist":
+          "A psychologist is a mental health professional who can diagnose and treat emotional and behavioral problems through therapy, but typically cannot prescribe medication.",
+
+        // --- Anxiety & Panic Management (Updated) ---
+        "i feel anxious":
+          "Anxiety is tough. Try the **5-4-3-2-1 technique** right now. Name 5 things you see, 4 things you feel, 3 things you hear, 2 things you smell, and 1 thing you taste.",
+        "how to stop overthinking":
+          "It sounds exhausting. Try setting a **'Worry Time'**—a specific 15-minute slot later today to focus on your thoughts. If they pop up now, remind yourself you'll deal with them later.",
+        "my heart is racing":
+          "That's a panic response. Focus on slowing your exhale. Try to breathe out for longer than you breathe in. This signals safety to your nervous system.",
+        "i am having a panic attack":
+          "Remember: This feeling is temporary. It will pass. Find a safe spot, use a grounding technique, and remind yourself you are safe.",
+        "how to calm down":
+          "Take a moment to tense and then fully release every muscle group, starting from your toes and moving up to your head. This is called **Progressive Muscle Relaxation**.",
+        "social anxiety tips":
+          "Start with small, manageable interactions, like a brief smile or complimenting a cashier. Remember, most people are focused on themselves.",
+        "i need distraction":
+          "Great idea. Try immersing yourself in a favorite song, a simple puzzle, or a short, funny video. Give your mind a break.",
+        "fear of failure":
+          "Fear of failure often means you care deeply about success. Redefine failure as a **learning experience**. What small, imperfect step can you take now?",
+        "what is imposter syndrome":
+          "It's the feeling that you don't deserve your success. Remind yourself of three specific **facts** about your past accomplishments. Facts beat feelings.",
+        "i can't sleep because of worry":
+          "Get up for a few minutes. Don't check the time or screens. Read a physical book in dim light until you feel drowsy, then return to bed.",
+        "what if i make a mistake":
+          "You will make mistakes. Everyone does. Mistakes are data points, not destiny. How can you prepare for one, and what is your plan to recover?",
+        "feel restless":
+          "Channel that energy. Do 10 jumping jacks or stand up and stretch deeply. Movement can help release nervous energy.",
+        "anxiety at work":
+          "Break large tasks into tiny, manageable steps. Focus *only* on the very next step. What's the smallest thing you can finish in the next 5 minutes?",
+        "dealing with uncertainty":
+          "Focus on what you **can** control today: your effort, your attitude, and your self-care. The rest is for tomorrow.",
+        "what helps anxiety":
+          "Consistent routines, gentle exercise, limiting caffeine, and regular connection with others are key long-term stabilizers.",
+        "i keep checking things":
+          "Excessive checking is often an attempt to reduce anxiety. Try delaying the check by 5 minutes, and gradually increase that time.",
+        "fear of flying":
+          "Practice visualizing a smooth, calm flight while using your controlled breathing technique. Focus on the final, positive destination.",
+        "what is generalized anxiety":
+          "It's chronic, excessive worry about everyday things. Learning to identify and challenge the 'what if' thoughts is central to managing it.",
+        "help with decision making":
+          "If a decision feels paralyzing, use the 'Regret Minimization Framework': Which choice will you regret *less* in a week or a year?",
+        "i feel overwhelmed by the news":
+          "It's okay to put up a **news boundary**. Commit to checking the news only once a day for a set amount of time (e.g., 10 minutes).",
+        "fear of public speaking":
+          "Remember that the audience wants you to succeed. Focus on delivering one clear message, and anchor yourself by gently gripping the sides of the lectern or desk.",
+        "what is catastrophic thinking":
+          "It's when your mind immediately jumps to the worst possible outcome. Challenge it by asking: 'What is the *most likely* outcome?'",
+        "i need to stop worrying about the future":
+          "Bring your focus to a task that requires your hands: wash dishes, fold laundry, or draw a simple geometric pattern.",
+        "i feel agitated":
+          "Try a sensory shift: hold an ice pack on the back of your neck or splash cold water on your wrists. This can help reset your nervous system.",
+        "i feel tense":
+          "Focus on your jaw. Consciously unclench it and let your tongue fall loosely in your mouth. Tension often holds here.",
+        "anxiety before an event":
+          "Rehearse a positive outcome in your mind, but also mentally prepare a simple coping strategy (like deep breathing) if you feel overwhelmed during the event.",
+        "i feel shaky":
+          "This is adrenaline. Try moving your body safely: pace, or gently shake out your hands and legs to discharge the physical energy.",
+        "fear of rejection":
+          "Remind yourself that rejection is part of life, and it rarely defines your worth. It's often about fit, timing, or the other person's issues, not yours.",
+        "test anxiety":
+          "Focus on preparation over prediction. Before the test, take a minute to write down your anxieties—this 'brain dump' can clear mental space.",
+        "what is health anxiety":
+          "Excessive worry about having a serious, undiagnosed medical condition. Focus on validated medical facts rather than 'what if' scenarios.",
+        "how to stop obsessive thoughts":
+          "Label the thought as 'just a thought' and purposefully shift your attention to an external, complex task like a Sudoku or reading technical material.",
+        "i feel like i'm making no progress":
+          "Progress isn't linear. Look back six months—what's one small skill you've built or challenge you’ve survived? That is progress.",
+        "how to practice deep breathing":
+          "Let's try it: breathe in slowly through your nose for 4 seconds, hold for 2, and exhale slowly through your mouth for 6 seconds. The long exhale is key.",
+        "i need a reset button":
+          "The best reset is a sensory change. Try taking off your shoes and feeling the texture of the floor, or splashing cold water on your face.",
+        "i need an uplifting thought":
+          "Remember: **A bad day is a data point, not a destiny.** It is one day, and tomorrow is a fresh start.",
+        "my thoughts are running fast":
+          "That's a sign of a high nervous system. Write down your thoughts as fast as you can for 3 minutes, then rip up the paper. It helps externalize them.",
+        "how to cope with a major change":
+          "Focus on creating a sense of **predictability** in the small things: your meal times, your walk, or your bedtime. Stability anchors you during change.",
+        "i'm worried about being judged":
+          "The truth is, most people are focused on their own feelings and problems. Try the 'spotlight effect' antidote: you are not as visible as you think you are.",
+        "what is panic disorder":
+          "Recurrent, unexpected panic attacks and a persistent fear of having another one. Treatment often involves therapy (like CBT) and breathing retraining.",
+        "how to manage phobias":
+          "A feared object/situation is usually harmless. The key is gradual, repeated exposure to the fear trigger in a safe, controlled way (systematic desensitization).",
+        "i'm feeling irritable":
+          "Irritability is often stress in disguise. Try pausing for a moment and asking, 'What do I truly need right now? Rest, food, or space?'",
+        "procrastination help":
+          "Break the task down into a 'Next 5 Minutes' goal. You don't have to finish the project, just work on the smallest piece of it for five minutes.",
+        "i need to set a hard deadline":
+          "Use the 'Parkinson's Law' counter: tell yourself the task must be done in half the time you think you need. The time constraint forces focus.",
+        "how to overcome perfectionism":
+          "Try to complete a task and label it as 'Good Enough.' The goal is completion and release, not flawless execution. Done is better than perfect.",
+        "my mind is blanking":
+          "This is often a sign of being overstimulated. Get a drink of cold water and look around the room, naming 10 simple objects to gently restart your focus.",
+        "i need to focus":
+          "Use the **Pomodoro Technique**: set a timer for 25 minutes of focused work, followed by a 5-minute break. Short, intense bursts are easier to manage.",
+        "how to manage FOMO":
+          "Acknowledge the Fear of Missing Out, but focus on the 'Joy of Missing Out' (**JOMO**)—the peace of mind that comes from being where you are.",
+
+        // --- Sadness & Low Mood (Updated) ---
+        "i feel sad":
+          "It's okay to feel sad. Please be gentle with yourself. Can you wrap yourself in a cozy blanket or drink a warm beverage right now?",
+        "i feel hopeless":
+          "Even a tiny flicker of hope is enough to start. What is one small, incredibly easy thing you can do right now that might improve your next 5 minutes?",
+        "low energy":
+          "When energy is low, focus on 'minimum viable self-care.' This could be just brushing your teeth or drinking a full glass of water. Celebrate that small win.",
+        "what is depression":
+          "Depression is a medical condition, not a personal failing, that affects mood, thought, and physical health. If you feel this way often, please reach out to a doctor.",
+        "i don't want to get out of bed":
+          "That's a very heavy feeling. Can you set a 5-minute timer? Just sit up and put your feet on the floor until the timer goes off. No pressure to do more.",
+        "i am crying":
+          "Let it out. Crying is a natural release. Find a quiet space and give yourself permission to feel it without judgment.",
+        "how to cheer up":
+          "Try listening to music that matches your current mood for a few minutes, then transition to something slightly more upbeat. Mood is a spectrum.",
+        "i miss someone":
+          "Grief and missing someone shows you loved them deeply. Write down one favorite memory you shared with them to honor their presence in your life.",
+        "i feel worthless":
+          "Your worth is inherent and unconditional. Challenge that thought: What evidence do you have that you are *not* worthless? List three pieces of evidence.",
+        "how to socialize when depressed":
+          "Try a 'parallel activity' where you are with others but don't need intense conversation, like watching a movie or working side-by-side.",
+        "seasonal affective disorder":
+          "Ensure you are maximizing your exposure to bright light, especially in the morning. If possible, consider a light therapy lamp.",
+        "how to forgive myself":
+          "Self-forgiveness starts with acknowledging the mistake and committing to learning from it. You are not defined by your worst moment.",
+        "i feel numb":
+          "Numbness is often a sign of being overwhelmed. Try running cold water over your hands or holding an ice cube to stimulate your senses.",
+        "i hate myself":
+          "This is a painful and powerful thought. Treat yourself as you would a struggling friend. What gentle words would you offer them?",
+        "motivation tips":
+          "Use the 'Two-Minute Rule': If a task takes less than two minutes, do it immediately. This builds momentum.",
+        "how to ask for help when depressed":
+          "It takes courage. Try a simple text: 'I'm having a hard time lately, could we talk for a few minutes soon?'",
+        "i feel empty":
+          "Emptiness can be a cue to fill the space with value-driven action. What is one thing you genuinely enjoy, and can you schedule 10 minutes for it?",
+        "i feel lonely in a crowd":
+          "This is a deep form of disconnection. Try turning outward: compliment someone or ask a genuine question to break the internal focus.",
+        "i lost interest in everything":
+          "A loss of pleasure (anhedonia) is serious. Schedule a small, enjoyable activity, even if you don't *feel* like it. Action often precedes motivation.",
+        "when does sadness become depression":
+          "When sadness is persistent (most of the day, nearly every day for weeks) and interferes with your life, it may be depression. A professional can help you know for sure.",
+        "how to stop emotional eating":
+          "Before eating, use the **HALT** check: Are you **H**ungry, **A**ngry, **L**onely, or **T**ired? If not hungry, choose a non-food coping strategy.",
+        "i feel like a burden":
+          "That is a common symptom of low mood, but it is a lie the illness tells you. Name one person who relies on you or genuinely enjoys your company to challenge that thought.",
+        "what is self-sabotage":
+          "It's actively or passively undermining your own goals. It often stems from a fear of success or fear of failure. Start by celebrating small wins loudly.",
+        "how to be less self-critical":
+          "Write down the criticism, then write a balanced, factual counter-statement. The goal is to move from harsh judgment to neutral observation.",
+        "i need something comforting":
+          "Wrap yourself tightly in a blanket and rock gently. This movement can be deeply self-soothing and mimics early comforting actions.",
+        "i feel unattractive":
+          "Your value has nothing to do with how you look. Focus on what your body *does* for you right now (walking, breathing, sitting) and appreciate its function.",
+        "what are behavioral activation techniques":
+          "These are simple actions designed to counter the inertia of depression, like going for a 10-minute walk or making a cup of tea. Action before motivation.",
+        "i feel disappointed in myself":
+          "Disappointment is a sign you care. Turn the feeling into a plan: What is one small, specific action you can take *right now* to move toward your goal?",
+        "how to be more gentle with myself":
+          "Practice talking to yourself as you would a child or a beloved pet. Use soft, encouraging words instead of harsh commands.",
+        "i don't see the point":
+          "When life feels meaningless, try to find one thing to be curious about. Curiosity can be a small bridge to engagement.",
+        "i feel stuck in a rut":
+          "Novelty breaks the rut. Introduce one tiny, new thing today, like listening to a podcast you've never heard of or trying a new flavor of tea.",
+        "i need something easy to do":
+          "Can you turn on a light? Opening the blinds or turning on a lamp can have a small, positive, immediate impact on your environment and mood.",
+        "how to cope with fatigue":
+          "Honor the fatigue. Instead of 'I should do X,' try 'I will rest now, and when I have a small amount of energy, I will do Y.'",
+        "i feel overwhelmed with grief":
+          "Grief comes in waves. Give yourself permission to let the wave pass without judgment. Focus on steady, gentle breathing until the crest breaks.",
+        "how to stop comparing myself to others":
+          "Comparison is the thief of joy. When you notice yourself comparing, gently pivot your thoughts back to a recent personal achievement or strength.",
+        "i am not enjoying my hobbies anymore":
+          "Don't pressure yourself to enjoy them perfectly. Try to engage in one hobby for just five minutes without expectation, just for the physical act of doing.",
+        "what is anhedonia":
+          "The inability to feel pleasure. It's a serious symptom of depression. You may need to 'act opposite' to your feelings by scheduling pleasurable things anyway.",
+        "i need help maintaining hygiene":
+          "Break it into micro-steps. Today's goal is just a face wash. Tomorrow, it's brushing your teeth. Celebrate each tiny step.",
+        "i am having trouble concentrating":
+          "Stress and low mood deplete focus. Try the 'One-Minute Rule': can you focus intensely on a task for just 60 seconds? Build from there.",
+        "how to build self-esteem":
+          "Self-esteem is built on doing estimable things. Commit to one small promise you make to yourself today, and keep it. Keeping promises builds trust in yourself.",
+        "i need a comforting distraction":
+          "Watch a video of cute animals or a short, calming nature scene. A visual shift can be surprisingly helpful.",
+        "i feel guilty for resting":
+          "Rest is a fundamental human need, not a luxury or a reward. Remind yourself: **I am a human being, not a human doing.**",
+
+        // --- Mindfulness & Self-Talk (Updated) ---
+        "what is mindfulness":
+          "Mindfulness is paying attention to the present moment without judgment. It's about being aware of where you are and what you're doing.",
+        "how to meditate":
+          "Start small. Sit comfortably, close your eyes, and focus on the sensation of your breath for just two minutes. When your mind wanders, gently return to the breath.",
+        "i have negative thoughts":
+          "Acknowledge them, but don't wrestle with them. Say to yourself, 'I am having the thought that [X],' which creates distance.",
+        affirmations:
+          "**I am capable.** **I am enough.** **I am doing my best.** Repeat one of these statements three times right now.",
+        "i feel overwhelmed":
+          "Write down everything swirling in your head. Seeing it on paper makes it finite. Then, pick just one thing to tackle.",
+        "how to practice gratitude":
+          "Before you go to sleep, name three specific things you are grateful for today, no matter how small (a hot drink, a comfortable chair, etc.).",
+        "cognitive behavioral therapy":
+          "CBT focuses on changing negative patterns of thinking or behavior. It helps you identify how your thoughts, feelings, and actions are connected.",
+        "i need perspective":
+          "Imagine yourself looking down on your current problem from a week, a month, or a year from now. How significant will it feel then?",
+        "manage inner critic":
+          "Give your inner critic a silly name and image (like a grumpy cartoon character). When it speaks, you can say, 'Thanks for the input, Gary, but I've got this.'",
+        "what is reframing":
+          "Reframing is looking at a situation from a different viewpoint. Instead of 'I failed,' try 'I successfully learned what doesn't work.'",
+        "how to be present":
+          "Engage all five senses in your current activity. If you're drinking water, notice the temperature, the taste, the sound, the weight of the glass, and the sight of the liquid.",
+        "how to stop ruminating":
+          "Try an 'interruption technique.' Snap a rubber band on your wrist or clap loudly to break the thought cycle.",
+        "mindfulness for beginners":
+          "Try mindful eating: slowly chew and savor three bites of your next meal, focusing only on the texture and flavor.",
+        "how to deal with change":
+          "Acknowledge that change is unsettling. Identify one core routine or value that you can hold onto even as things shift around you.",
+        "i need encouragement":
+          "I believe in you. You have navigated every challenge you've faced so far. This moment is just one more step on that journey.",
+        "how to forgive others":
+          "Forgiveness is for *you*, not them. It's releasing the toxic emotional grip they have on your peace. You don't have to forget, just let go of the anger.",
+        "my life is boring":
+          "Introduce a small dose of novelty. Take a slightly different route home, listen to a new genre of music, or try a food you've never had before.",
+        "feeling stuck":
+          "Identify the absolute smallest possible action you can take to move forward. If you're stuck on writing, type a single word.",
+        "how to journal":
+          "Just start writing, anything. Don't worry about grammar or structure. Try a stream of consciousness or list three things you felt today.",
+        "mantra for today":
+          "My mantra for you today is: **Progress, not perfection.** Keep moving forward, even if it's slowly.",
+        "what is stoicism":
+          "It's a philosophy focused on what you can control: your thoughts, judgments, and actions. Accept what you cannot change, and act virtuously.",
+        "how to handle unsolicited advice":
+          "Acknowledge it simply and politely without committing to action: 'Thank you for your suggestion, I'll think about that.'",
+        "i need patience":
+          "Patience often means accepting that the current moment is exactly what it is. Try this: name three things in the room that are not moving.",
+        "how to practice self-awareness":
+          "Start a nightly 'Emotional Audit': Write down three moments where your mood shifted and what caused it. Don't judge, just observe.",
+        "what is cognitive fusion":
+          "It's when you are 'stuck' to your thoughts, treating them as absolute truth instead of just words or mental events. Try saying 'I'm having the thought that...' to separate yourself.",
+        "what is acceptance and commitment therapy":
+          "ACT is an approach that uses acceptance and mindfulness strategies to help you live a life consistent with your personal values.",
+        "how to observe thoughts neutrally":
+          "Imagine your thoughts are like cars passing on a street or leaves flowing down a stream. Acknowledge them, but don't get in or on them.",
+        "i feel scattered":
+          "Try the **Mindful Check-in**: Body scan for tension, name your dominant emotion, and commit to one intentional action for the next 5 minutes.",
+        "how to stop mind-reading":
+          "Remind yourself that you cannot know what another person is thinking. Replace the assumption with a question: 'I'm wondering how you feel about this.'",
+        "what is a limiting belief":
+          "A thought or opinion that you hold to be true that limits your potential. Identify one and try to find two pieces of evidence that contradict it.",
+        "i need help with gratitude":
+          "Start small: name one thing that went *right* today, even if it was just the weather or a decent cup of coffee.",
+        "how to deal with uncertainty in life":
+          "Focus on your daily rituals. Stability in the small things (like morning coffee or an evening walk) helps counteract uncertainty in the big things.",
+        "what is metacognition":
+          "Thinking about your own thinking. It’s the ability to reflect on your thought processes, which is essential for changing negative patterns.",
+        "how to develop self-discipline":
+          "Don't rely on willpower. Focus on creating an environment that supports your goals, making the desired action the easiest one.",
+        "i need to stop being so hard on myself":
+          "Challenge the harsh language. If you wouldn't say it to a friend, don't say it to yourself. Rephrase the criticism as gentle guidance.",
+        "i'm struggling with perfectionism":
+          "Set a 'Minimum Viable Product' goal. What is the *least* you can do to complete this task? Aim for that, and stop.",
+        "how to process emotions":
+          "Emotions are physical sensations. Try to locate the emotion in your body (tight chest, pit in stomach) and just observe the sensation without judgment for 30 seconds.",
+        "i need to remember my values":
+          "Identify two or three core values (e.g., kindness, honesty). When making a decision, ask, 'Which choice aligns best with my values?'",
+        "how to overcome fear of success":
+          "Fear of success is often a fear of the pressure that comes with it. Make a plan for how you will maintain your self-care and boundaries *after* you succeed.",
+        "i need to manage negative self-talk":
+          "Try replacing the negative statement with a more neutral one. Instead of 'I'm terrible at this,' try 'I am still learning this skill.'",
+        "how to practice self-acceptance":
+          "Acceptance doesn't mean you like everything; it means acknowledging the reality of a situation or feeling without fighting it. 'This is how I feel right now.'",
+        "what is cognitive restructuring":
+          "A core CBT technique where you identify distorted thoughts (e.g., all-or-nothing thinking) and replace them with more balanced, realistic ones.",
+        "i feel resistant to change":
+          "Acknowledge the fear, and then list 3 positive *potential* outcomes of the change, even if they feel small or unlikely.",
+        "how to be more authentic":
+          "Start small by expressing a minor opinion or preference that you usually hide, such as choosing the restaurant or the movie.",
+
+        // --- Self-Care & Relationships (Updated) ---
+        "how to practice self-compassion":
+          "Treat your struggles with the same kindness and understanding you'd show a close friend. Be your own advocate.",
+        "i feel lonely":
+          "Loneliness is a signal that you need connection. Reach out to one person—even a text that just says 'Thinking of you' can help.",
+        "i need advice on relationships":
+          "Healthy relationships require clear communication and mutual respect. Start by clearly stating your need without blaming the other person.",
+        "how to say no":
+          "You can say no without giving a lengthy justification. A simple, polite 'No, thank you, that doesn't work for me' is a complete sentence.",
+        "toxic person":
+          "It's important to protect your peace. Can you limit your interaction time with this person, or maintain a firm, emotional distance?",
+        "how to communicate better":
+          "Practice active listening. Repeat back what the other person said to ensure you understood them before sharing your own perspective.",
+        "i feel misunderstood":
+          "That is frustrating. Try to articulate your feeling using 'I' statements: 'I feel [emotion] when [situation] happens, and I need [clear request].'",
+        "how to ask for help":
+          "Be specific and direct. Instead of 'I need help,' try, 'I need you to help me fold laundry for 10 minutes.' Specificity makes it easier for others to respond.",
+        "healthy habits":
+          "Start with hydration. Drink one full glass of water right now. Small, simple wins build confidence.",
+        "what about sleep":
+          "Good sleep hygiene means keeping a consistent bedtime/wake time, even on weekends, and making your bedroom dark, quiet, and cool.",
+        "i need an easy self-care idea":
+          "Try a quick 'digital detox.' Put your phone in another room for 30 minutes and focus on a non-screen activity.",
+        "how to manage anger":
+          "Take a 'cooling down' period. If you feel rage, excuse yourself and count backward from 100 while clenching and unclenching your fists.",
+        "i feel burnt out":
+          "Burnout is chronic stress. You need rest, not just a break. Schedule non-negotiable downtime, and look at delegating or reducing obligations.",
+        "i have family conflict":
+          "Focus on regulating your own response. You can only control your half of the conversation. Seek to understand, not to win.",
+        "how to set personal goals":
+          "Use the S.M.A.R.T. goal framework: Specific, Measurable, Achievable, Relevant, Time-bound.",
+        "how to build resilience":
+          "Resilience is built by coping well with past difficulties. Reflect on a tough time you overcame. What strengths did you use then?",
+        "i feel guilty":
+          "Guilt relates to a specific action; shame is about your whole identity. Address the action: Can you apologize, make amends, or learn from it?",
+        "how to be happy":
+          "Happiness isn't a destination; it's a practice. It involves finding meaning, building deep connections, and savoring positive moments.",
+        "i need a creative outlet":
+          "Doodling or writing down a fictional scenario for 5 minutes can be a quick and effective creative break.",
+        "managing grief":
+          "Grief is a necessary process. Allow yourself time and space to feel it. There is no timeline for healing.",
+        "codependency definition":
+          "It's an excessive emotional reliance on another person, often involving minimizing one's own needs to satisfy theirs. Focus on reclaiming your independent needs.",
+        "how to apologize sincerely":
+          "A sincere apology has three parts: Acknowledge the harm ('I was wrong to...'), express genuine regret ('I feel bad that...'), and state your commitment to change ('Next time, I will...').",
+        "i need to set a boundary at work":
+          "Keep it professional, polite, and brief. For example: 'I can only work on this project until 5 PM today; I'll pick it up again tomorrow.'",
+        "how to avoid arguments":
+          "Before responding to conflict, use the **A-W-A-I-T** rule: **A**m **W**hat **A**m **I** **T**hinking? Wait 5 seconds before speaking.",
+        "how to show appreciation":
+          "Don't just say 'thanks.' Be specific: 'I really appreciated you doing [X] because it saved me [Y].' Specificity makes it meaningful.",
+        "i am being manipulated":
+          "Acknowledge the manipulative statement to yourself, but do not engage. Repeat a simple, non-committal phrase like, 'That's your perspective,' and change the subject.",
+        "how to delegate tasks":
+          "Clearly communicate the *goal* and the *deadline*, then trust the other person to handle the *method*. Let go of the need for micro-management.",
+        "i need an energy boost without coffee":
+          "Try a power pose for two minutes (like standing with your hands on your hips) or smelling a citrus scent like orange or lemon.",
+        "how to manage jealousy":
+          "Jealousy often covers insecurity. Shift your focus from the other person's success/relationship to your own personal growth and existing strengths.",
+        "i need alone time":
+          "Quietly communicate your need: 'I need 30 minutes of quiet time to recharge, and then I'll be back to spend time with you.'",
+        "what is reflective listening":
+          "A communication skill where you paraphrase or summarize what the other person said to confirm understanding and validate their message.",
+        "how to maintain friendships":
+          "Be reliably present, initiate contact occasionally, and celebrate their victories as enthusiastically as you support them during hard times.",
+        "i need a routine check":
+          "Routines are about consistency, not rigidity. Are you consistently meeting your basic needs (sleep, food, movement)? If not, start there.",
+        "how to deal with passive aggression":
+          "Address the behavior, not the emotion. State the facts neutrally: 'I noticed you left the dirty dishes. Could you please wash them now?'",
+        "i feel bored in my relationship":
+          "Introduce novelty! Plan a surprise date, try a new hobby together, or just switch up your evening routine.",
+        "how to end a friendship":
+          "Be kind, direct, and clear. State that you need distance and don't feel the relationship is working, but avoid placing blame.",
+        "what is love bombing":
+          "Excessive attention and affection early in a relationship, often used as a manipulative tactic to gain control later on. Slow down the relationship pace.",
+        "how to manage criticism from a partner":
+          "Listen for the need hidden beneath the criticism. Say, 'I hear you're feeling neglected. Can we talk about a plan for spending quality time?'",
+        "what are love languages":
+          "Ways people prefer to express and receive love: Words of Affirmation, Acts of Service, Receiving Gifts, Quality Time, and Physical Touch.",
+        "how to prioritize self-care":
+          "Treat self-care activities (like a walk or reading) like non-negotiable appointments in your calendar.",
+        "i feel taken for granted":
+          "Clearly communicate your feelings and then set a boundary around the specific actions you need to stop doing if they aren't respected.",
+        "what is the drama triangle":
+          "A destructive relationship pattern where people cycle between the roles of Persecutor, Rescuer, and Victim. Focus on non-judgmental adult-to-adult communication.",
+        "i feel jealous of my friend's success":
+          "Acknowledge the feeling, but turn the focus inward. Ask yourself: 'What does their success show me is possible in my own life?'",
+        "i feel taken advantage of":
+          "It’s time to define your limits. Use a clear, simple statement like, 'I'm not available to do that right now, but I hope it works out for you.'",
+        "how to deal with ghosting":
+          "Ghosting is a reflection of *their* poor communication skills, not your worth. Allow yourself to feel the sting, then turn your focus to people who show up for you.",
+        "how to manage conflict":
+          "Before you respond, ask yourself: Is this an argument I need to win, or a conversation I need to understand? Aim for understanding.",
+        "i need to vent":
+          "Go for it. Venting is a release. Is it okay if I just listen, or would you like me to respond with some support?",
+        "i need a mental health day":
+          "That's a vital self-care choice. What is one thing you can completely *drop* from your schedule today to create space for rest?",
+        "how to deal with energy vampires":
+          "Practice the 'Gray Rock' technique: be as uninteresting and non-reactive as possible, offering short, dull responses to starve their need for drama.",
+        "i need emotional validation":
+          "Your feelings are valid. It makes complete sense that you feel [name the emotion] given [name the situation]. You are heard.",
+        "how to set relationship expectations":
+          "Have a clear, non-confrontational conversation using 'I feel/I need' statements to align on what you both want from the relationship.",
+        "i need to be more assertive":
+          "Assertiveness is stating your needs and feelings respectfully, without aggression or passive avoidance. Practice the script: 'When you do X, I feel Y. I need Z.'",
+        "how to give constructive criticism":
+          "Use the 'Sandwich Method': Start with a genuine compliment, offer the area for improvement, and end with an encouraging statement.",
+        "i feel defensive":
+          "Defensiveness is a natural protective reaction. Pause and ask: 'What am I afraid will happen if I just listen to this criticism?'",
+        "i need to stop people-pleasing":
+          "Start by practicing a 5-second pause before saying 'yes' to any request. Use that pause to check in with your own energy and time.",
+
+        // --- Physical Health & General Check-in (Updated) ---
+        "how does exercise help mental health":
+          "Exercise releases endorphins, which have natural mood-lifting and stress-reducing effects. Even a 10-minute walk helps.",
+        "what to eat for better mood":
+          "Focus on balanced, regular meals. Foods rich in Omega-3s (fish) and B vitamins (leafy greens) are great for brain health.",
+        "i need a mood boost":
+          "Go outside and get some sunlight for 10 minutes. Natural light has a powerful, regulating effect on mood.",
+        "i am overwhelmed by clutter":
+          "Clutter can create mental load. Choose one tiny area—like your nightstand or one shelf—and clear it completely.",
+        "i keep forgetting things":
+          "Stress and anxiety severely impact memory. Try writing things down immediately, even simple notes.",
+        "what is emotional regulation":
+          "It's the ability to respond to life's demands in a way that is acceptable to society and flexible. It involves noticing and adjusting your reaction.",
+        "i feel disconnected":
+          "Try engaging in an activity that fully absorbs your attention, like playing an instrument or focusing intensely on a detailed craft.",
+        "am i normal":
+          "What you are feeling is part of the human experience. There is a huge range of 'normal' when it comes to mental and emotional health.",
+        "i want to start therapy but i'm scared":
+          "It's totally normal to be scared. The first session is usually just a low-pressure conversation to see if the therapist is a good fit.",
+        "what is burnout":
+          "A state of emotional, physical, and mental exhaustion caused by prolonged or excessive stress. It requires rest, boundary setting, and often professional help.",
+        "i need to unplug":
+          "Declare one room or one meal as a **Screen-Free Zone**. This creates a small, dedicated space for genuine presence and rest.",
+        "how to improve focus":
+          "Ensure you're not multitasking. Close all other tabs and focus on a single, primary task until you hit a 10-minute checkpoint.",
+        "how to start exercising":
+          "Start ridiculously small. Can you put on your walking shoes and walk to the mailbox and back? Just two minutes of movement is a win.",
+        "i feel physically drained":
+          "Your body is trying to tell you something. Lie down for 10 minutes with your eyes closed and practice deep, full, slow breaths to restore a little energy.",
+        "i need an uplifting visual":
+          "Look up at the ceiling or the sky, notice the colors and shapes. Shifting your gaze upward can interrupt a downward mood cycle.",
+        "how to practice mindful walking":
+          "Pay attention to every physical sensation: the feel of your foot hitting the ground, the swing of your arms, and the sounds you hear around you.",
+        "what is trauma-informed care":
+          "An approach that recognizes how widespread trauma is and focuses on physical, psychological, and emotional safety for both the person seeking help and the provider.",
+        "how to deal with body image issues":
+          "Shift your focus from *appearance* to *function*. Appreciate what your body allows you to *do* (walk, hug, listen, create), not just how it looks.",
+        "i need to relax my shoulders":
+          "Shrug your shoulders up toward your ears, hold tightly for 5 seconds, then let them drop as heavily as you can. Repeat three times.",
+        "how to stop comparing my trauma":
+          "Trauma is not a competition. If it hurt you, it was bad enough. Your experience is valid and deserving of healing, regardless of anyone else's story.",
+        "what are mirror neurons":
+          "These are brain cells that fire both when you perform an action and when you observe someone else performing the same action. They link us to others, aiding empathy.",
+        "i feel disconnected from my body":
+          "Try a simple, physical act: gently rub your hands together until they feel warm, or give yourself a gentle, firm hug.",
+        "i need a sense of accomplishment":
+          "Complete a chore you've been putting off for less than a minute, like taking out the trash or wiping a counter. A quick win creates a dopamine burst.",
+        "how to get out of my head":
+          "Engage your hands and feet. Do a puzzle, garden, or knead bread. Physical engagement pulls focus from internal thought to external action.",
+        "what is self-talk":
+          "The internal dialogue you have with yourself. It influences how you feel and behave. The goal is to make it balanced, kind, and realistic.",
+      };
+
+   
+      const ADMIN_GREETING =
+        "🛠️ Dev Mode Activated. Welcome, Trainer. Available Options: 'Ad QnA', 'show QnA', 'AdminExit'.";
+
+      function sendMessage() {
+        const input = document.getElementById("userInput");
+        const message = input.value.trim();
+        const chatBody = document.getElementById("chatBody");
+        if (!message) return;
+
+        // Show user message
+        const userMsg = document.createElement("div");
+        userMsg.className = "user-message";
+        userMsg.textContent = message;
+        chatBody.appendChild(userMsg);
+
+        // --- Admin Commands ---
+        if (message === "Admin@b2c") {
+          isDevMode = true;
+          showBotMessage(ADMIN_GREETING);
+          return;
+        }
+
+        if (message === "AdminExit") {
+          isDevMode = false;
+          waitingForAnswer = false;
+          tempQuestion = "";
+          showBotMessage("✅ Exited Dev Mode. Back to support mode.");
+          return;
+        }
+
+        if (isDevMode && message.toLowerCase() === "ad qna") {
+          waitingForAnswer = true;
+          showBotMessage(
+            "📝 Got it. Please type the **question** you want to train."
+          );
+          return;
+        }
+
+        if (isDevMode && message.toLowerCase() === "show qna") {
+          const keys = Object.keys(trainingData);
+          if (keys.length === 0) {
+            showBotMessage("❌ No QnA pairs added yet.");
+          } else {
+            showBotMessage("🧠 Current QnA Training Data:");
+            keys.forEach((q) => {
+              showBotMessage(`Q: ${q}`);
+            });
+          }
+          return;
+        }
+
+        // --- Core Logic ---
+        if (isDevMode) {
+          handleDevTraining(message);
+        } else {
+          handleUserFlow(message);
+        }
+
+        input.value = "";
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+
+      function handleDevTraining(msg) {
+        if (waitingForAnswer) {
+          if (tempQuestion === "") {
+            // Step 1: User has typed the Question
+            tempQuestion = msg.toLowerCase().trim();
+            showBotMessage(
+              "Got the question. Now, type the **answer** for it."
+            );
+          } else {
+            // Step 2: User has typed the Answer
+            trainingData[tempQuestion] = msg;
+            showBotMessage(`✅ Trained:\nQ: "${tempQuestion}"\nA: "${msg}"`);
+            waitingForAnswer = false;
+            tempQuestion = "";
+          }
+        } else {
+          showBotMessage(`I'm in Dev Mode. Use 'Ad QnA' or 'show QnA'.`);
+        }
+      }
+
+      function handleUserFlow(msg) {
+        // --- Triage Flow (Steps 0, 1, 2) ---
+        if (triageStep === 0) {
+          triageStep = 1;
+          showBotMessage("👋 Welcome! I'm here to listen. What is your name?");
+          return;
+        }
+
+        if (triageStep === 1) {
+          triageData.name = msg;
+          triageStep = 2;
+          showBotMessage(
+            `It's good to connect, ${triageData.name}. How are you feeling right now? (e.g., Anxious, Sad, Stressed, Okay)`
+          );
+          return;
+        }
+
+        if (triageStep === 2) {
+          triageData.feeling = msg;
+          triageStep = 3;
+          let initialResponse = `Thank you for sharing, ${triageData.name}. I hear that you are feeling **${triageData.feeling}**.\n\n`;
+
+          if (
+            triageData.feeling.toLowerCase().includes("anxi") ||
+            triageData.feeling.toLowerCase().includes("panic")
+          ) {
+            initialResponse +=
+              "When feeling overwhelmed, try the **4-7-8 breathing** technique: Inhale 4 seconds, Hold 7 seconds, Exhale 8 seconds. This can help calm your nervous system. Ask me about **grounding** next.";
+          } else if (
+            triageData.feeling.toLowerCase().includes("sad") ||
+            triageData.feeling.toLowerCase().includes("depress")
+          ) {
+            initialResponse +=
+              "Remember that your feelings are valid. Can you tell me one small thing you can do for yourself right now, like having a glass of water or stretching? Ask me about **self-care** next.";
+          } else if (
+            triageData.feeling.toLowerCase().includes("stress") ||
+            triageData.feeling.toLowerCase().includes("overwhelmed")
+          ) {
+            initialResponse +=
+              "Stress can be overwhelming. Try the **'brain dump'** method: write down *everything* that's stressing you out. Then, ask me about **coping mechanisms**.";
+          } else {
+            initialResponse +=
+              "I'm here to provide support and resources. You can now ask me anything about coping skills, mindfulness, or finding professional help. Start by asking, **'what is mindfulness'**.";
+          }
+          showBotMessage(initialResponse);
+          return;
+        }
+
+        // --- Main Q&A After Triage (Fuzzy Matching Logic Applied) ---
+        if (triageStep >= 3) {
+          const lowerMsg = msg.toLowerCase().trim();
+
+          // 1. Direct match (for exact trained Q&A)
+          if (trainingData[lowerMsg]) {
+            showBotMessage(trainingData[lowerMsg]);
+            return;
+          }
+
+          // 2. FUZZY MATCHING based on common keywords
+
+          // Anxiety, Panic, Worry
+          if (
+            lowerMsg.includes("anxi") ||
+            lowerMsg.includes("panic") ||
+            lowerMsg.includes("worr") ||
+            lowerMsg.includes("scared")
+          ) {
+            showBotMessage(
+              "I hear the anxiety is strong right now. Let's try to gently anchor you. Try the **5-4-3-2-1 grounding technique**: Name 5 things you see, 4 things you touch, 3 things you hear, 2 things you smell, and 1 thing you taste. Remember to breathe deeply."
+            );
+            return;
+          }
+
+          // Sadness, Depression, Low Mood
+          if (
+            lowerMsg.includes("sad") ||
+            lowerMsg.includes("depress") ||
+            lowerMsg.includes("low") ||
+            lowerMsg.includes("miserable")
+          ) {
+            showBotMessage(
+              "It takes courage to express sadness. I recommend trying a simple **behavioral activation** step: put on a short, favorite song, or gently stretch. Small actions can shift your emotional state. Please be kind to yourself."
+            );
+            return;
+          }
+
+          // Stress, Overwhelmed, Fatigue
+          if (
+            lowerMsg.includes("stress") ||
+            lowerMsg.includes("overwhelmed") ||
+            lowerMsg.includes("burnout") ||
+            lowerMsg.includes("tired")
+          ) {
+            showBotMessage(
+              "Feeling stressed is normal, but exhausting. Let's look at your commitments. Try the **'Brain Dump'**: write down everything stressing you out, then pick one tiny thing to let go of or delegate. Reset your priorities."
+            );
+            return;
+          }
+
+          // Sleep Issues
+          if (
+            lowerMsg.includes("sleep") ||
+            lowerMsg.includes("insomnia") ||
+            lowerMsg.includes("rest")
+          ) {
+            showBotMessage(
+              "Poor sleep can make everything harder. Try to avoid screens for 30 minutes before bed. Focus on making your room cool, dark, and quiet. Would you like a guided **sleep meditation** resource?"
+            );
+            return;
+          }
+
+          // Mindfulness and Techniques
+          if (
+            lowerMsg.includes("mindful") ||
+            lowerMsg.includes("exercise") ||
+            lowerMsg.includes("technique")
+          ) {
+            showBotMessage(
+              "How about a quick **mindfulness exercise**? Find a simple object nearby (a pen, a mug). Examine it for 60 seconds. Notice its colors, textures, and shadows. This pulls you fully into the moment."
+            );
+            return;
+          }
+
+          // 3. Fallback response for unknown questions
+          showBotMessage(
+            "🤖 I'm a support bot and don't understand that question yet. Can you try asking about **breathing exercises**, **self-care**, or **finding a therapist**?"
+          );
+          return;
+        }
+      }
+
+      function showBotMessage(text) {
+        const chatBody = document.getElementById("chatBody");
+        const botMsg = document.createElement("div");
+        botMsg.className = "bot-message";
+        botMsg.textContent = text;
+        chatBody.appendChild(botMsg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+
+      // Initial greeting
+      document.addEventListener("DOMContentLoaded", () => {
+        showBotMessage(
+          "👋 Welcome to your Wellness Chatbot. I'm here to listen and offer support. Say **Hi** to start our conversation."
+        );
+      });
+    </script>
+
+    <!---Footer Section ------------------------->
+  </body>
+</html>
