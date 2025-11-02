@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+    <head>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+        <link rel="stylesheet" href="../Footer.css">
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <link rel="stylesheet" href="./asset/account.css">
+
+    <base href="../" />
+
+    </head>
+<div id="header-0"> </div>
+    <body>
+<section class="site-wrapper">
+      <div class="main-container" id="mainContainer">
+        <div class="form-panel register-panel">
+          <form action="#">
+            <h1>Create Account</h1>
+            <div class="social-links-wrapper">
+              <a href="https://accounts.google.com/o/oauth2/auth?client_id=YOUR_GOOGLE_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=email profile&response_type=code"
+                class="social-link google-icon" title="Google"><i class="fab fa-google"></i></a>
+
+              <a href="https://www.facebook.com/v12.0/dialog/oauth?client_id=YOUR_FACEBOOK_APP_ID&redirect_uri=YOUR_REDIRECT_URI&scope=email"
+                class="social-link facebook-icon" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+
+              <a href="https://api.twitter.com/oauth/authenticate?oauth_token=YOUR_TWITTER_OAUTH_TOKEN"
+                class="social-link twitter-icon" title="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+
+            <span>or use your email for registration</span>
+
+            <div class="input-group">
+              <i class="fas fa-user"></i>
+              <input type="text" placeholder="Name" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-envelope"></i>
+              <input type="email" placeholder="Email" name="email" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-phone"></i>
+              <input type="tel" placeholder="Phone Number" name="phone" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-lock"></i>
+              <input type="password" placeholder="Password" required />
+            </div>
+
+            <button type="submit">Register</button>
+
+            <a href="#" class="mobile-toggle-link" id="mobileLoginBtn">Already have an account? Login</a>
+          </form>
+        </div>
+
+        <div class="form-panel login-panel">
+          <form onsubmit="return false;"> 
+            <h1>Login </h1>
+                <div class="social-links-wrapper">
+              <a href="https://accounts.google.com/o/oauth2/auth?client_id=YOUR_GOOGLE_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=email profile&response_type=code"
+                class="social-link google-icon" title="Google"><i class="fab fa-google"></i></a>
+
+              <a href="https://www.facebook.com/v12.0/dialog/oauth?client_id=YOUR_FACEBOOK_APP_ID&redirect_uri=YOUR_REDIRECT_URI&scope=email"
+                class="social-link facebook-icon" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+
+              <a href="https://api.twitter.com/oauth/authenticate?oauth_token=YOUR_TWITTER_OAUTH_TOKEN"
+                class="social-link twitter-icon" title="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+            <span>or use your account</span>
+
+            <div class="input-group">
+              <i class="fas fa-envelope"></i>
+              <input type="email" placeholder="Email" id="loginEmail" required />
+            </div>
+
+            <div class="input-group">
+              <i class="fas fa-lock"></i>
+              <input type="password" placeholder="Password" id="loginPassword" required />
+            </div>
+
+            <a href="#" class="password-forgot">Forgot Your Password?</a>
+            <button type="button" onclick="handleAdminLogin()">Login </button>
+
+            <a href="#" class="mobile-toggle-link" id="mobileRegisterBtn">Don't have an account? Register</a>
+          </form>
+        </div>
+
+        <div class="overlay-sections-container">
+          <div class="overlay-background">
+            <div class="overlay-content overlay-left-side">
+              <h1>Welcome Back!</h1>
+              <p>To keep connected with us please login with your personal info</p>
+              <button class="transparent-btn" id="loginBtn">Login </button>
+            </div>
+            <div class="overlay-content overlay-right-side">
+              <h1>Login For Existing Customers!</h1>
+              <p>Enter your personal details and start your journey with us</p>
+              <button class="transparent-btn" id="registerBtn">Register</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        // Existing script content...
+        const mainContainer = document.getElementById("mainContainer");
+        const registerBtn = document.getElementById("registerBtn"); // Desktop register button
+        const loginBtn = document.getElementById("loginBtn");       // Desktop login button
+
+        // Mobile Links (now <a> tags)
+        const mobileRegisterBtn = document.getElementById("mobileRegisterBtn");
+        const mobileLoginBtn = document.getElementById("mobileLoginBtn");
+
+
+        // Desktop event listeners (These are for the overlay buttons)
+        if (registerBtn) {
+            registerBtn.addEventListener("click", (event) => {
+                event.preventDefault(); // Prevent default link behavior if it's an <a>
+                mainContainer.classList.add("right-panel-active-toggle");
+            });
+        }
+
+        if (loginBtn) {
+            loginBtn.addEventListener("click", (event) => {
+                event.preventDefault(); // Prevent default link behavior if it's an <a>
+                mainContainer.classList.remove("right-panel-active-toggle");
+            });
+        }
+
+        // Mobile event listeners (These are for the mobile-toggle-link)
+        if (mobileRegisterBtn) {
+          mobileRegisterBtn.addEventListener("click", (event) => {
+            event.preventDefault(); // Prevent default link behavior
+            mainContainer.classList.add("right-panel-active-toggle");
+          });
+        }
+
+        if (mobileLoginBtn) {
+          mobileLoginBtn.addEventListener("click", (event) => {
+            event.preventDefault(); // Prevent default link behavior
+            mainContainer.classList.remove("right-panel-active-toggle");
+          });
+        }
+
+
+    // Social Login Popup Script (existing)
+      function openPopup(url, title) {
+        const width = 500;
+        const height = 600;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+        const features = `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,status=yes`;
+        window.open(url, title, features);
+      }
+
+      document.querySelectorAll('.social-links-wrapper a').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const url = this.href;
+          const title = this.title || 'Social Login';
+          openPopup(url, title);
+        });
+      });
+
+    // START OF NEW FUNCTIONALITY FOR ADMIN LOGIN
+    function handleAdminLogin() {
+        // Get values from the input fields
+        const emailInput = document.getElementById("loginEmail");
+        const passwordInput = document.getElementById("loginPassword");
+
+        // Simple validation to ensure fields are not empty (though 'required' attribute helps)
+        if (!emailInput.value || !passwordInput.value) {
+            alert("Please enter both email and password.");
+            return;
+        }
+
+        // Define the target credentials
+        const ADMIN_EMAIL = "Admin@gmail.com";
+        const ADMIN_PASSWORD = "Admin123";
+        
+        // Trim and compare the input values (case-insensitve for email for better UX)
+        if (emailInput.value.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase() && 
+            passwordInput.value === ADMIN_PASSWORD) {
+            
+            // Redirect to chatbot.html on successful admin login
+            window.location.href = "chatbot.html";
+        } else {
+            // Placeholder for what would happen on a standard, non-admin login attempt
+            // For a static page, we'll just show an alert. In a real application, 
+            // you'd typically submit the form to a server-side endpoint.
+            alert("Login failed. Invalid credentials.");
+        }
+    }
+    // END OF NEW FUNCTIONALITY
+
+      </script>
+
+    </section>
+    
+    
+    
+    
+
+</body>
+</html>
