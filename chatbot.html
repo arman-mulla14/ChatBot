@@ -612,7 +612,6 @@
           "The internal dialogue you have with yourself. It influences how you feel and behave. The goal is to make it balanced, kind, and realistic.",
       };
 
-   
       const ADMIN_GREETING =
         "🛠️ Dev Mode Activated. Welcome, Trainer. Available Options: 'Ad QnA', 'show QnA', 'AdminExit'.";
 
@@ -629,7 +628,11 @@
         chatBody.appendChild(userMsg);
 
         // --- Admin Commands ---
-        if (message === "Admin@b2c") {
+        if (
+          message === "Admin@b2c" ||
+          message === "arman0596" ||
+          message === "Arman1111"
+        ) {
           isDevMode = true;
           showBotMessage(ADMIN_GREETING);
           return;
